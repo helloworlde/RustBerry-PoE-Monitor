@@ -22,8 +22,8 @@ mod display_types;
 
 struct AppState {
     last_shift_time: Instant,
-    shift_index: usize,
     shift_offset: Point,
+    shift_direction_x: i32,
     last_periodic_toggle_time: Instant,
     is_display_periodically_on: bool,
     screen_dimmed: bool,
@@ -90,14 +90,18 @@ fn main() -> Result<(), Box<dyn Error>> {
     let screen_timeout_duration = config.display_timeout();
     let periodic_on_duration = config.periodic_on_duration();
     let periodic_off_duration = config.periodic_off_duration();
-    let shift_interval = Duration::from_secs(60);
-    let shift_pattern = [Point::new(0, 0), Point::new(1, 0)];
     let refresh_interval = config.refresh_interval();
+    let shift_interval = if refresh_interval.is_zero() {
+        Duration::from_millis(1)
+    } else {
+        refresh_interval
+    };
+    let shift_bounds_x = (0, 6);
 
     let mut app_state = AppState {
         last_shift_time: Instant::now(),
-        shift_index: 0,
         shift_offset: Point::new(0, 0),
+        shift_direction_x: 1,
         last_periodic_toggle_time: Instant::now(),
         is_display_periodically_on: true,
         screen_dimmed: false,
@@ -125,7 +129,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             &mut poe_disp,
         )?;
 
-        update_pixel_shift(now, shift_interval, &shift_pattern, &mut app_state);
+        update_pixel_shift(now, shift_interval, shift_bounds_x, &mut app_state);
 
         let stats = gather_stats(&mut sys);
 
@@ -199,13 +203,20 @@ fn handle_periodic_display(
 fn update_pixel_shift(
     now: Instant,
     shift_interval: Duration,
-    shift_pattern: &[Point],
+    shift_bounds_x: (i32, i32),
     state: &mut AppState,
 ) {
-    if now.duration_since(state.last_shift_time) >= shift_interval {
-        state.shift_index = (state.shift_index + 1) % shift_pattern.len();
-        state.shift_offset = shift_pattern[state.shift_index];
-        state.last_shift_time = now;
+    while now.duration_since(state.last_shift_time) >= shift_interval {
+        let next_x = state.shift_offset.x + state.shift_direction_x;
+
+        if next_x < shift_bounds_x.0 || next_x > shift_bounds_x.1 {
+            state.shift_direction_x *= -1;
+            state.shift_offset.x += state.shift_direction_x;
+        } else {
+            state.shift_offset.x = next_x;
+        }
+
+        state.last_shift_time += shift_interval;
         debug!(
             "Shifting display pixels to offset: {:?}",
             state.shift_offset

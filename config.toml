@@ -16,6 +16,7 @@ periodic_on_duration = 10
 periodic_off_duration = 20
 
 # Refresh interval for the display update loop (in milliseconds).
+# The display content also shifts by one pixel per refresh to reduce OLED burn-in.
 # Lower values update faster but use slightly more CPU.
 refresh_interval_ms = 1000
 

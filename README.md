@@ -31,6 +31,7 @@ This tool provides real-time monitoring of your Raspberry Pi's system statistics
 - **Minimal** resource usage
 - Developed in Rust for memory safety 🦀
 - Display real-time system statistics (IP address, memory, CPU usage, etc.) on the PoE HAT's OLED screen 📊
+- Continuously scroll the OLED contents horizontally to reduce burn-in risk
 - Automatic fan control based on the CPU temperature 🌡️
 
 ## 📦 Installation
@@ -66,7 +67,7 @@ If this file does not exist when you first run the application, it will be autom
     *   `enable_periodic_off` (Default: `false`): Set to `true` to enable the periodic on/off cycle of the display.
     *   `periodic_on_duration` (Default: `10`): If periodic off is enabled, duration (seconds) the display stays ON.
     *   `periodic_off_duration` (Default: `20`): If periodic off is enabled, duration (seconds) the display stays OFF.
-    *   `refresh_interval_ms` (Default: `1000`): How often (in milliseconds) the display and system stats are updated. Lower values are faster but use more CPU.
+    *   `refresh_interval_ms` (Default: `1000`): How often (in milliseconds) the display and system stats are updated. The same interval is used for the anti-burn-in horizontal scrolling step. Lower values are faster but use more CPU.
 *   **`[fan]`**
     *   `temp_on` (Default: `60.0`): CPU temperature (Celsius) at which the fan turns on.
     *   `temp_off` (Default: `50.0`): CPU temperature (Celsius) at which the fan turns off.
@@ -95,6 +96,7 @@ periodic_on_duration = 10
 periodic_off_duration = 20
 
 # Refresh interval for the display update loop (in milliseconds).
+# The display content also shifts by one pixel per refresh to reduce OLED burn-in.
 # Lower values update faster but use slightly more CPU.
 # Default: 1000 (1 second)
 refresh_interval_ms = 1000
